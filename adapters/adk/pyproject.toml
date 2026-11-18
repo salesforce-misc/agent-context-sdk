@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-context-adk"
+version = "0.7.0"
+description = "Google ADK adapter for agent-context-sdk."
+requires-python = ">=3.10"
+license = { text = "Salesforce Public Code License (see the root LICENSE.txt)" }
+authors = [{ name = "Agentic Context Maintainers" }]
+# Not published. The root `agent-context-sdk` wheel is the sole distribution and
+# vendors this adapter (no per-framework extras). Retained for local
+# `pip install -e` dev/test only; the classifier makes twine refuse an upload.
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "agent-context-sdk>=0.7.0",
+    "google-adk>=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_context_adk"]

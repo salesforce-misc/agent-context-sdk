@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-context-foundry"
+version = "0.7.0"
+description = "Foundry/Microsoft Agent Framework adapter for agent-context-sdk."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Salesforce Public Code License (see the root LICENSE.txt)" }
+authors = [{ name = "Agentic Context Maintainers" }]
+keywords = ["foundry", "agent-framework", "memory", "ingestion"]
+# Not published. The root `agent-context-sdk` wheel is the sole distribution and
+# vendors this adapter (no per-framework extras). Retained for local
+# `pip install -e` dev/test only; the classifier makes twine refuse an upload.
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "agent-context-sdk>=0.7.0",
+    "agent-framework-foundry>=1.14.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_context_foundry"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Shared adapter contract tests (repo-root, never packaged).
+pythonpath = ["../../contract_tests"]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/agentic_context_foundry"]

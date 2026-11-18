@@ -1,0 +1,139 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-context-sdk"
+version = "0.7.0"
+description = "Framework-agnostic SDK for ingesting AI agent conversation context into a Context Service."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "LicenseRef-Salesforce-Public-Code-License"
+license-files = ["LICENSE.txt"]
+authors = [{ name = "Agentic Context Maintainers" }]
+keywords = ["data-cloud", "agent", "context", "ingestion"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.6,<3",
+    "requests>=2.31",
+    "httpx>=0.27",
+    # ContextAuth (core auth.py) signs the JWT with cryptography, and every
+    # adapter's __init__ mandates auth credentials, so cryptography is a hard
+    # core requirement — not an optional/per-framework concern.
+    "cryptography>=48.0.1",
+]
+
+[project.optional-dependencies]
+# No per-framework runtime extras. The adapter import packages
+# (agentic_context_langgraph / _adk / _claude) always ship inside this single
+# wheel, but their third-party framework SDKs (langgraph/langchain-core,
+# google-adk, claude-agent-sdk) are NOT declared as dependencies here.
+#
+# Rationale: this SDK is adopted by teams that ALREADY run one of these agent
+# frameworks, so the SDK is already present in their environment — declaring it
+# again (via a required dep or an opt-in extra) adds no value and only risks
+# version-pin conflicts with the version they already chose. So `pip install
+# agent-context-sdk` is the one and only install form. A user who somehow lacks
+# the framework SDK installs it directly (`pip install claude-agent-sdk` etc.);
+# the adapter surfaces that need at first use (LangGraph at import, Claude/ADK at
+# the first SDK-backed method call).
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "httpx>=0.27",
+    "responses>=0.25",
+    "respx>=0.21",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    # The framework SDKs are dev-only: needed to exercise the adapter test
+    # suites, never imposed on end users. (langgraph/adk pull Python >=3.10
+    # transitively; contributors run the full suite on 3.10+.)
+    "langgraph>=0.2",
+    "langchain-core>=0.3",
+    "google-adk>=2.1.0",
+    "claude-agent-sdk",
+    # Floor is 0.3 — earlier versions ship RunHooks without on_llm_start /
+    # on_llm_end, which run_hooks() needs.
+    "openai-agents>=0.3",
+    "agent-framework-foundry>=1.14.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/salesforce-misc/agent-context-sdk"
+Repository = "https://github.com/salesforce-misc/agent-context-sdk"
+Issues = "https://github.com/salesforce-misc/agent-context-sdk/issues"
+Changelog = "https://github.com/salesforce-misc/agent-context-sdk/blob/main/CHANGELOG.md"
+
+# The single wheel carries the core package plus all four framework adapters.
+# hatchling maps each `packages` entry to the wheel root by stripping the parent
+# path prefix, so each out-of-src leaf directory lands at its own top-level
+# import name (adapters/langgraph/src/agentic_context_langgraph ->
+# agentic_context_langgraph/, etc.) with NO `adapters/` prefix. Fallback if a
+# build ever shows a nested import path: switch to
+# [tool.hatch.build.targets.wheel.force-include] with explicit source->dest maps.
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/agentic_context",
+    "adapters/langgraph/src/agentic_context_langgraph",
+    "adapters/adk/src/agentic_context_adk",
+    "adapters/claude/src/agentic_context_claude",
+    "adapters/foundry/src/agentic_context_foundry",
+    "adapters/openai/src/agentic_context_openai",
+]
+# Hatchling includes non-.py files under `packages` by default. Force-include
+# keeps the host lifecycle & mid-turn tools skill in the wheel if future exclude rules tighten,
+# so AgentContextClient.tool_skill_dir() resolves after `pip install`.
+[tool.hatch.build.targets.wheel.force-include]
+"src/agentic_context/skills/ace-mid-turn-tools/SKILL.md" = "agentic_context/skills/ace-mid-turn-tools/SKILL.md"
+
+# NOTE: `only-include` is a strict whitelist. Plain `include` is ADDITIVE — it
+# augments hatchling's default file selection rather than restricting it, so an
+# `include` list here (as we previously used) still shipped internal
+# test harnesses, `adapters/*/tests/`, per-adapter `pyproject.toml`s, and per-adapter READMEs
+# into the published sdist. Switching to `only-include` makes the list
+# authoritative: nothing outside it lands in the tarball (hatchling still
+# always ships PKG-INFO and .gitignore as VCS metadata — both are safe to
+# publish).
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src/agentic_context",
+    "adapters/langgraph/src/agentic_context_langgraph",
+    "adapters/adk/src/agentic_context_adk",
+    "adapters/claude/src/agentic_context_claude",
+    "adapters/foundry/src/agentic_context_foundry",
+    "adapters/openai/src/agentic_context_openai",
+    "tests",
+    "README.md",
+    "LICENSE.txt",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Shared adapter contract tests; the ADK suite runs under this config.
+pythonpath = ["contract_tests"]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/agentic_context"]

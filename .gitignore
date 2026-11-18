@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenvs
+.venv/
+.venv-test/
+venv/
+env/
+
+# Test / type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Beacon runtime logs written by the adapters (per-customer jsonl)
+.beacon/
+
+# Agent scratch / planning artifacts (never committed)
+.agents/
+
+# Local benchmark scripts
+bench_*.py
+
+worktrees/
+
+# Secret material — never commit, regardless of location. A too-narrow ignore
+# rule is how keys leak; these broad patterns are the net.
+.env*
+!.env.example
+*.env
+!*.env.example
+*.key
+*.pem
+**/server.key

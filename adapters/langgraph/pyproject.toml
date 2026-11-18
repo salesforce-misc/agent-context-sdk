@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-context-langgraph"
+version = "0.7.0"
+description = "LangGraph adapter for agent-context-sdk."
+requires-python = ">=3.10"
+license = { text = "Salesforce Public Code License (see the root LICENSE.txt)" }
+# Not published. The root `agent-context-sdk` wheel is the sole distribution and
+# vendors this adapter (no per-framework extras). Retained for local
+# `pip install -e` dev/test only; the classifier makes twine refuse an upload.
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "agent-context-sdk>=0.7.0",
+    "langgraph>=0.2",
+    "langchain-core>=0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_context_langgraph"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Shared adapter contract tests (repo-root, never packaged).
+pythonpath = ["../../contract_tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error",
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    # Upstream langchain_core uses asyncio.iscoroutinefunction internally;
+    # Python 3.13+ emits DeprecationWarning. Not our code; ignore until upstream
+    # migrates to inspect.iscoroutinefunction.
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src/agentic_context_langgraph"]
